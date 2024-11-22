@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Logs Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .search-container {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    input[type="text"] {
+      padding: 8px;
+      margin-right: 10px;
+      width: 250px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 8px 12px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      background-color: white;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .pagination {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .pagination button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin: 0 5px;
+    }
+
+    .pagination button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Event Logs Dashboard</h1>
+
+  <div class="search-container">
+    <label for="eventTypeSearch">Search by Event Type: </label>
+    <input type="text" id="eventTypeSearch" placeholder="Enter event type">
+    
+    <label for="sourceAppIdSearch">Search by Source App ID: </label>
+    <input type="text" id="sourceAppIdSearch" placeholder="Enter Source App ID">
+    
+    <button onclick="fetchLogs()">Search</button>
+  </div>
+
+  <table id="logsTable">
+    <thead>
+      <tr>
+        <th>Event Type</th>
+        <th>Timestamp</th>
+        <th>Source App ID</th>
+        <th>Data Payload</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    <button onclick="changePage('prev')">Previous</button>
+    <span id="pageInfo">Page 1</span>
+    <button onclick="changePage('next')">Next</button>
+  </div>
+
+  <script>
+    let currentPage = 1;
+    const limit = 10;
+
+    async function fetchLogs() {
+      const eventType = document.getElementById('eventTypeSearch').value;
+      const sourceAppId = document.getElementById('sourceAppIdSearch').value;
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/getlogs?eventType=${eventType}&sourceAppId=${sourceAppId}&page=${currentPage}&limit=${limit}`);
+        const data = await response.json();
+
+        const logsTable = document.getElementById('logsTable').getElementsByTagName('tbody')[0];
+        logsTable.innerHTML = '';
+
+        data.data.forEach(log => {
+          const row = logsTable.insertRow();
+          row.innerHTML = `
+            <td>${log.eventType}</td>
+            <td>${new Date(log.timestamp).toLocaleString()}</td>
+            <td>${log.sourceAppId}</td>
+            <td>${JSON.stringify(log.dataPayload)}</td>
+          `;
+        });
+
+        document.getElementById('pageInfo').innerText = `Page ${data.currentPage} of ${data.totalPages}`;
+      } catch (err) {
+        console.error('Failed to fetch logs:', err);
+      }
+    }
+
+    function changePage(direction) {
+      if (direction === 'prev' && currentPage > 1) {
+        currentPage--;
+      } else if (direction === 'next') {
+        currentPage++;
+      }
+
+      fetchLogs();
+    }
+
+    fetchLogs();
+  </script>
+</body>
+</html>
